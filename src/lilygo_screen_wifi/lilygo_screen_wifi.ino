@@ -13,8 +13,9 @@
 String Image_str;
 int Size;
 int Sizepack;
-const char* ssid = "Box-gut-2.4G";
-const char* password = "Rut@b@g@93";
+String ssid , password ;
+int status = 0 ;
+String statut = "0";
 AsyncWebServer server(80);
 
 Arduino_ESP32RGBPanel *bus = new Arduino_ESP32RGBPanel(
@@ -108,20 +109,54 @@ void setupSPIFFS() {
   }
 }
 
-void connectToWiFi() {
-  WiFi.begin(ssid, password);
-  Serial.print("Connexion en cours au réseau Wi-Fi...");
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    Serial.print(".");
-  }
-
-  Serial.println("\nConnecté au réseau Wi-Fi");
-  Serial.print("Adresse IP : ");
-  Serial.println(WiFi.localIP());
+void ecriture(String fichiername, String value) {
+  File dataFile =  SPIFFS.open(fichiername, "w");
+  dataFile.print(value);
+  dataFile.close();
 }
 
+String lecture(String fichiername) {
+  String result = "";
+  File dataFile = SPIFFS.open(fichiername, "r");
+  for (int i = 0; i < dataFile.size() ; i++) {
+    result = result + (char)dataFile.read();
+  }
+  dataFile.close();
+  return (result);
+}
+
+String connectToWiFi() {
+  ssid = lecture("/ssid.txt");
+  password = lecture("/wep.txt");
+  WiFi.begin(ssid.c_str(), password.c_str());
+  int retries = 0;
+  while ((WiFi.status() != WL_CONNECTED) && (retries < 20) ) {
+    retries++;
+    delay(500);
+    Serial.print(".");
+  }
+  if (retries > 19) {
+    Serial.println(F("WiFi connection FAILED"));
+    statut = "Failed";
+    return (statut);
+  }
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("\nConnecté au réseau Wi-Fi");
+    Serial.print("Adresse IP : ");
+    Serial.println(WiFi.localIP());
+  }
+  statut = "Success";
+  return (statut);
+}
+
+void accespoint() {
+  ssid = "Screen_wifi";
+  const char* pass = NULL;
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP(ssid.c_str(), pass);
+  Serial.print("[+] AP Created with IP Gateway : ");
+  Serial.println(WiFi.softAPIP());
+}
 
 uint16_t* convertStringToUint16Array(String inputString, int arraySize) {
   uint16_t* dataArray = new uint16_t[arraySize];
@@ -144,7 +179,10 @@ void setup() {
   Wire.begin(IIC_SDA_PIN, IIC_SCL_PIN, (uint32_t)800000);
   Serial.begin(115200);
   setupSPIFFS();
-  connectToWiFi();
+  statut = connectToWiFi();
+  if (statut != "Success" ) {
+    accespoint();
+  }
   xl.begin();
   uint8_t pin = (1 << PWR_EN_PIN) | (1 << LCD_CS_PIN) | (1 << TP_RES_PIN) | (1 << LCD_SDA_PIN) | (1 << LCD_CLK_PIN) |
                 (1 << LCD_RST_PIN) | (1 << SD_CS_PIN);
@@ -159,6 +197,19 @@ void setup() {
   server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
     request->send(SPIFFS, "/index.html");
   });
+  server.on("/setwifi", HTTP_GET, [](AsyncWebServerRequest * request) {
+    request->send(SPIFFS, "/Connection.html");
+  });
+
+  server.on("/senddata", HTTP_POST, [](AsyncWebServerRequest * request) {
+    String SSID = request->getParam("SSID", true)->value();
+    String WPA = request->getParam("WPA", true)->value();
+    ecriture("/ssid.txt", SSID);
+    ecriture("/wep.txt", WPA);
+    Serial.println("Redemarrage de l'esp ...");
+    ESP.restart();
+  });
+
   server.on("/reset", HTTP_GET, [](AsyncWebServerRequest * request) {
     gfx->draw16bitRGBBitmap(0, 0, (uint16_t *)image_data, 480, 480);
     request->send(200, "text/plain", "Image reset.");
@@ -172,21 +223,23 @@ void setup() {
     //Serial.println(imageChunk);
     if (imageChunk.indexOf("Begin") != -1) {
       Image_str = "";
-      int colonIndex1 = imageChunk.indexOf(':');
-      int colonIndex2 = imageChunk.lastIndexOf(':');
-      Size = imageChunk.substring(colonIndex1 + 2, colonIndex2).toInt(); // +2 pour ignorer l'espace après le premier ":"
-      Sizepack = imageChunk.substring(colonIndex2 + 2).toInt();
+      Size = imageChunk.substring(imageChunk.indexOf(':') + 2, imageChunk.lastIndexOf(':')).toInt(); // +2 pour ignorer l'espace après le premier ":"
+      Sizepack = imageChunk.substring(imageChunk.lastIndexOf(':') + 2).toInt();
       Serial.println("Debut de l'ecriture du fichier");
     } else if (imageChunk.indexOf("End") != -1 ) {
       //Serial.println(Image_str);
       uint16_t * data_image = convertStringToUint16Array(Image_str, Size);
       gfx->draw16bitRGBBitmap(0, 0, (uint16_t *)data_image, 480, 480);
+      delay(1000);
+      gfx->draw16bitRGBBitmap(0, 0, (uint16_t *)data_image, 480, 480);
+      delay(500);
+      delete [] data_image;
       Image_str = "";
       Serial.println("Fin de l'ecriture du fichier");
-    } else {      
-      if( imageChunk.length() == Sizepack ){ 
+    } else {
+      if ( imageChunk.length() == Sizepack ) {
         Image_str.concat(imageChunk);
-      }else{
+      } else {
         request->send(400, "text/plain", "Erreur Paquet !");
         return;
       }

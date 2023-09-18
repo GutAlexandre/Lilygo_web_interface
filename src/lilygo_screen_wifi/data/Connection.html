@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Pélican</title>
+</head>
+ <body>
+	 
+		  <!-- The Modal -->
+		  <div class="modal" id="modalconnexion">
+			 <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+				<div class="modal-content">
+				   <!-- Modal Header -->
+				   <div class="modal-header">
+					  
+				   </div>
+				   <!-- Modal body -->
+				   <div class="modal-body" >
+						<form action="" method="post" style="text-align:center">
+						  <div class="form-group">
+							<label for="ssid">SSID (nom du résaux)</label></br>
+							<input type="text" class="form-control" title="ssid Invalide" id="ssid" name="ssid" aria-describedby="emailHelp" placeholder="Enter SSID"></input>
+						  </div>
+						  <div class="form-group">
+							<label for="InputWPA">Mot de passe WPA/WEP</label></br>
+							<input type="password" class="form-control" id="InputWPA" name="InputWPA" placeholder="Password"></input>
+						  </div>
+							<input type="checkbox" onclick="ShowPWD()">Show Password
+							<script>
+							function ShowPWD() {
+								var x = document.getElementById("InputWPA");
+								if (x.type === "password") {
+									x.type = "text";
+								} else {
+									x.type = "password";
+								}
+							}
+							</script>
+							</input>						  
+							</br>
+							<hr>
+							</br>
+							<div class="d-grid gap-2">
+								<button id="Submit" type="button" class="btn btn-success btn-lg btn-block" onclick="connect()"><h5>Submit</h5></button>
+							</div>
+						</form>						
+					</br>
+					</div>
+				</div>
+			 </div>
+		  </div>
+		  
+<script>
+function connect() {
+	if (document.getElementById('ssid').value == "" ){
+		alert("Aucun SSID n'a été definie !");
+		return;
+	}else if (document.getElementById('InputWPA').value == "" ){
+		alert("Aucun WPA/WEP n'a été definie !");
+		return;
+	}else{
+		alert("Pélican va redemarer pour se connecter au wifi, si il n'y arrive pas, il faudrat se reconnecter au wifi Pélican-Hardware !");
+        const formData = new FormData();
+		
+		formData.append("SSID", document.getElementById('ssid').value);
+		formData.append("WPA", document.getElementById('InputWPA').value);
+
+		fetch("/senddata", {
+			method: "POST",
+			body: formData,
+		})
+		.then((response) => {
+			if (response.ok) {
+				console.error("Success");
+			} else {
+				throw new Error("Erreur lors de l'envoi du paquet.");
+			}
+		})
+		.catch((error) => {
+			console.error(error);
+		})
+	}
+}
+</script>		
+</body>
+</html>
