@@ -10,7 +10,7 @@
 #include <Arduino.h>
 #include "lv_demo_music.h"
 
-// #define USING_2_1_INC_CST820     1           //  Full circle 2.1 inches using CST820 touch screen
+#define USING_2_1_INC_CST820     1           //  Full circle 2.1 inches using CST820 touch screen
 // #define USING_2_8_INC_GT911      1           //  Full circle 2.8 inches using GT911 touch screen
 // #define USING_2_1_INC_FT3267     1           //  Half circle 2.1 inches use FT3267 touch screen
 
@@ -19,11 +19,8 @@
 #if defined(USING_2_1_INC_FT3267)
 #include "ft3267.h"
 #endif
-#if defined(USING_2_1_INC_CST820)
-#define TOUCH_MODULES_CST_SELF
-#include "TouchLib.h"
-TouchLib touch(Wire, IIC_SDA_PIN, IIC_SCL_PIN, CTS820_SLAVE_ADDRESS);
-#elif defined(USING_2_8_INC_GT911)
+
+#if defined(USING_2_8_INC_GT911)
 #define TOUCH_MODULES_GT911
 #include "TouchLib.h"
 TouchLib touch(Wire, IIC_SDA_PIN, IIC_SCL_PIN, GT911_SLAVE_ADDRESS1);
@@ -204,16 +201,6 @@ static void lv_touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data
     } else {
         data->state = LV_INDEV_STATE_REL;
     }
-#elif defined(USING_2_1_INC_CST820) || defined(USING_2_8_INC_GT911)
-    if (touch.read()) {
-        TP_Point t = touch.getPoint(0);
-        data->point.x = t.x;
-        data->point.y = t.y;
-        data->state = LV_INDEV_STATE_PR;
-        touch_pin_get_int = false;
-    } else {
-        data->state = LV_INDEV_STATE_REL;
-    }
 #endif
 }
 
@@ -249,8 +236,6 @@ void setup()
 
 #if defined(USING_2_1_INC_FT3267)
     ft3267_init(Wire);
-#elif defined(USING_2_8_INC_GT911) || defined(USING_2_1_INC_CST820)
-    touch.init();
 #endif
 
     tft_init();
@@ -336,15 +321,9 @@ void setup()
 
     lv_indev_drv_init(&indev_drv);
     indev_drv.type = LV_INDEV_TYPE_POINTER;
-    indev_drv.read_cb = lv_touchpad_read;
     lv_indev_drv_register(&indev_drv);
 
     pinMode(TP_INT_PIN, INPUT_PULLUP);
-    attachInterrupt(
-    TP_INT_PIN, [] {
-        touch_pin_get_int = true;
-    }, FALLING);
-
     lv_demo_music();
 }
 

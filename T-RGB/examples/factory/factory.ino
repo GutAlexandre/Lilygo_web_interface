@@ -24,7 +24,7 @@
 #endif
 #if defined(USING_2_1_INC_CST820)
 #define TOUCH_MODULES_CST_SELF
-#include "TouchLib.h"
+#include <TouchLib.h>
 TouchLib touch(Wire, IIC_SDA_PIN, IIC_SCL_PIN, CTS820_SLAVE_ADDRESS);
 #elif defined(USING_2_8_INC_GT911)
 #define TOUCH_MODULES_GT911

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Connected-Screen Sender</title>
+    <style>
+        #output {
+            max-width: 480px;
+            max-height: 480px;
+        }
+    </style>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+</head>
+
+<body>
+    <div id="container">
+        <nav class="navbar navbar-expand-lg bg-body-tertiary">
+            <div class="container-fluid" style="max-width: 80%;">
+                <a class="navbar-brand" href="/">Connected-Screen</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false"
+                    aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <form class="d-flex">
+                    <ul class="navbar-nav">
+                        <li class="nav-item dropdown ">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                                More
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a target="_blank" rel="noopener" class="nav-link"
+                                        href="/profile">
+                                        <span class="fa-regular fa-user"></span>
+                                        <span class="menu-text">Profile</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a target="_blank" rel="noopener" class="nav-link" href="setwifi">
+                                        <span class="fa-solid fa-wifi"></span>
+                                        <span class="menu-text">Settings</span>
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a target="_blank" rel="noopener" class="nav-link"
+                                        href="https://github.com/GutAlexandre">
+                                        <span class="fa-brands fa-github icon"></span>
+                                        <span class="menu-text">Github</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+
+                </form>
+            </div>
+        </nav>
+    </div>
+    <div class="container mt-4">
+
+        <h1>Transfert d'image vers ESP32 (480x480 pixels)</h1>
+        </br>
+        <!-- Formulaire d'envoi d'image -->
+        <form id="imageForm" onsubmit="return false;">
+            <div class="mb-3">
+
+                <input type="file" id="imageInput" class="form-control" accept="image/*">
+            </div>
+            <button type="submit" class="btn btn-success" disabled>Envoyer <i class="fa-solid fa-share"
+                    style="color: #eeecf3;"></i></button>
+        </form>
+
+        <div class="form-check mt-3">
+            <input type="checkbox" class="form-check-input" id="Save" name="Save_input">
+            <label class="form-check-label" for="Save">Sauvegarder l'image ?</label>
+        </div>
+
+        <div class="mt-4" id="output"></div>
+        <div id="imageData"></div>
+        <div id="result"></div>
+        <div id="size"></div>
+        <div class="progress" id="progressbar_value" role="progressbar" aria-label="Success example" aria-valuenow="0"
+            aria-valuemin="0" aria-valuemax="100">
+            <div id="progressbar_texte" class="progress-bar bg-success" style="width: 0%">0%</div>
+        </div>
+
+
+
+    </div>
+    <!-- Script JavaScript -->
+
+
+    <script>
+        var currentRotation = 0; // Angle de rotation actuel
+        var resizedDataUrl = null; // URL de l'image redimensionnée
+
+        const input = document.getElementById("imageInput");
+        const form = document.getElementById("imageForm");
+        const sizeDiv = document.getElementById("size");
+        const resultDiv = document.getElementById("result");
+        const loader = document.getElementById("loader");
+        const IMAGE_WIDTH = 480;
+        const IMAGE_HEIGHT = 480;
+        const CHUNK_SIZE = 4096;
+        const maxsize = 30000; // 30 KB
+        const targetSizeInBytes = maxsize * 1024; // 30 KB
+
+        input.addEventListener("change", function () {
+            resizeAndAddBorders();
+        });
+
+        function convert(dataURL) {
+            const file = input.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+                const chunkSize = CHUNK_SIZE;
+                reader.onload = function (event) {
+                    const image = new Image();
+                    image.src = event.target.result;
+
+                    image.onload = function () {
+                        const canvas = document.createElement("canvas");
+                        canvas.width = IMAGE_WIDTH;
+                        canvas.height = IMAGE_HEIGHT;
+                        const context = canvas.getContext("2d");
+                        const send_button = document.querySelector(".btn-success");
+
+                        context.drawImage(image, 0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
+                        const imageData = context.getImageData(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT).data;
+
+                        const outputArray = [];
+                        let count = 0;
+                        for (let i = 0; i < imageData.length; i += 4) {
+                            const r = imageData[i];
+                            const g = imageData[i + 1];
+                            const b = imageData[i + 2];
+                            const rgb565 = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
+                            outputArray.push(`0x${rgb565.toString(16).toUpperCase()}, `);
+
+
+                            count += 1;
+                        }
+                        var res = outputArray.join("").replace(/\s/g, "");
+                        resultDiv.innerHTML = `<h2>Image convertie en tableau C : octets</h2><pre id="completeData">${res}</pre>`;
+                        sizeDiv.innerHTML = `<h5>Taille du tableau C :><pre id="sizedata">${outputArray.length}</pre></h5>`;
+                        send_button.removeAttribute("disabled");
+                        document.getElementById("imageData").value = res;
+                    };
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+
+        function resizeAndAddBorders() {
+            var input = document.getElementById('imageInput');
+            var output = document.getElementById('output');
+
+            if (input.files && input.files[0]) {
+                var file = input.files[0];
+
+                // Vérifiez la taille du fichier en kilo-octets (1 Ko = 1024 octets)
+                var fileSizeInBytes = file.size;
+                var fileSizeInKB = fileSizeInBytes / 1024;
+
+                if (fileSizeInKB > maxsize) {
+                    output.innerHTML = 'La taille du fichier est supérieure à 30 Ko. Veuillez sélectionner une image plus petite.';
+                    return;
+                }
+
+                var reader = new FileReader();
+
+                reader.onload = function (e) {
+                    var img = new Image();
+                    img.src = e.target.result;
+
+                    img.onload = function () {
+                        var canvas = document.createElement('canvas');
+                        var ctx = canvas.getContext('2d');
+                        var targetWidth = IMAGE_WIDTH;
+                        var targetHeight = IMAGE_HEIGHT;
+
+                        var x = 0;
+                        var y = 0;
+                        var canvasWidth = targetWidth;
+                        var canvasHeight = targetHeight;
+
+                        if (img.width > targetWidth || img.height > targetHeight) {
+                            var ratio = Math.min(targetWidth / img.width, targetHeight / img.height);
+                            canvasWidth = img.width * ratio;
+                            canvasHeight = img.height * ratio;
+                            x = (targetWidth - canvasWidth) / 2;
+                            y = (targetHeight - canvasHeight) / 2;
+                        }
+
+                        canvas.width = targetWidth;
+                        canvas.height = targetHeight;
+
+                        ctx.fillStyle = 'black';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                        ctx.drawImage(img, x, y, canvasWidth, canvasHeight);
+
+                        resizedDataUrl = canvas.toDataURL('image/jpeg', 1.0);
+
+                        convert(resizedDataUrl);
+
+                        output.innerHTML = '<img id="image_resize" src="' + resizedDataUrl + '" alt="Image Redimensionnée" >';
+                    };
+                };
+
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                output.innerHTML = 'Sélectionnez une image valide.';
+            }
+        }
+
+        form.addEventListener("submit", function (event) {
+            event.preventDefault(); // Empêche l'envoi du formulaire
+
+            const sizeData = document.getElementById("sizedata").textContent;
+            const completeData = document.getElementById("completeData").textContent;
+            const progressBar = document.getElementById('progressbar_value');
+            const progressBarText = document.getElementById('progressbar_texte');
+
+            var checkbox = document.getElementById("Save");
+
+            const chunkSize = CHUNK_SIZE; // Taille du paquet (en octets)
+            const chunks = chunkString(completeData, chunkSize); // Divisez les données en paquets
+            function chunkString(str, size) {
+                const chunks = [];
+                for (let i = 0; i < str.length; i += size) {
+                    chunks.push(str.slice(i, i + size));
+                }
+                return chunks;
+            }
+
+            chunks.unshift("Begin : " + sizeData + " : " + CHUNK_SIZE);
+            chunks.push("End");
+
+            function sendChunksWithDelay(chunks, index) {
+                if (index < chunks.length) {
+                    const chunk = chunks[index];
+                    //console.log(`Envoi du paquet ${index + 1}: ${chunk}`);
+
+                    const formData = new FormData();
+                    formData.append("imageChunk", chunk);
+                    if (checkbox.checked) {
+                        var savestatus = 1;
+                    } else {
+                        var savestatus = 0;
+                    }
+                    formData.append("savestatus", savestatus);
+                    formData.append("filename", input.files[0].name);
+                    formData.append("actual", index + 1);
+                    formData.append("target", chunks.length);
+                    fetch("/sendImageChunk", {
+                        method: "POST",
+                        body: formData,
+                    })
+                        .then((response) => {
+                            if (response.ok) {
+
+                                console.log(`Paquet ${index + 1}/${chunks.length} envoyé avec succès à l'ESP32.`);
+                                pourcent = (((index + 1) * 100) / chunks.length).toFixed(2);;
+                                if (pourcent > 99) {
+                                    pourcent = 100;
+                                }
+                                progressBar.setAttribute('aria-valuenow', pourcent);
+                                progressBarText.innerText = pourcent + '%';
+                                progressBarText.style.width = pourcent + '%';
+
+                            } else {
+                                throw new Error("Erreur lors de l'envoi du paquet.");
+                                index -= 1
+                            }
+                        })
+                        .catch((error) => {
+                            console.error(error);
+                        })
+                        .finally(() => {
+                            setTimeout(() => {
+                                sendChunksWithDelay(chunks, index + 1);
+                            }, 10);
+                        });
+                }
+            }
+            sendChunksWithDelay(chunks, 0);
+        });
+
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+
+    <script src="https://kit.fontawesome.com/1cfcd63e7f.js" crossorigin="anonymous"></script>
+</body>
+
+</html>

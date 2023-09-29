@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Connected-Screen Liste</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+		integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+</head>
+
+<body>
+	<div id="container">
+		<nav class="navbar navbar-expand-lg bg-body-tertiary">
+			<div class="container-fluid" style="max-width: 80%;">
+				<a class="navbar-brand" href="/">Connected-Screen</a>
+				<button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+					data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false"
+					aria-label="Toggle navigation">
+					<span class="navbar-toggler-icon"></span>
+				</button>
+				<form class="d-flex">
+					<ul class="navbar-nav">
+						<li class="nav-item dropdown ">
+							<a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+								aria-expanded="false">
+								More
+							</a>
+							<ul class="dropdown-menu">
+								<li>
+									<a target="_blank" rel="noopener" class="nav-link" href="/profile">
+										<span class="fa-regular fa-user"></span>
+										<span class="menu-text">Profile</span>
+									</a>
+								</li>
+								<li>
+									<a target="_blank" rel="noopener" class="nav-link" href="setwifi">
+										<span class="fa-solid fa-wifi"></span>
+										<span class="menu-text">Settings</span>
+									</a>
+								</li>
+
+								<li>
+									<a target="_blank" rel="noopener" class="nav-link"
+										href="https://github.com/GutAlexandre">
+										<span class="fa-brands fa-github icon"></span>
+										<span class="menu-text">Github</span>
+									</a>
+								</li>
+							</ul>
+						</li>
+					</ul>
+				</form>
+			</div>
+		</nav>
+	</div>
+	<div class="container mt-4">
+		<h1>Liste des fichiers</h1>
+		<ul>
+			{{FILE_LIST}}
+		</ul>
+	</div>
+</body>
+
+</html>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+	integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+	crossorigin="anonymous"></script>
+
+<script src="https://kit.fontawesome.com/1cfcd63e7f.js" crossorigin="anonymous"></script>
+<script>
+	function removeFile(button) {
+		var fileName = button.id;
+
+		const formData = new FormData();
+		formData.append("img", fileName);
+		fetch("/removeimg", {
+			method: "POST",
+			body: formData,
+		})
+			.then((response) => {
+				if (response.ok) {
+					console.log("success");
+
+				} else {
+					throw new Error("Erreur lors de l'envoi du paquet.");
+				}
+			})
+			.catch((error) => {
+				console.error(error);
+			})
+
+	}
+
+	function buttonClick(button) {
+		var fileName = button.id;
+
+		const formData = new FormData();
+		formData.append("img", fileName);
+		fetch("/putimg", {
+			method: "POST",
+			body: formData,
+		})
+			.then((response) => {
+				if (response.ok) {
+					console.log("success");
+
+				} else {
+					throw new Error("Erreur lors de l'envoi du paquet.");
+				}
+			})
+			.catch((error) => {
+				console.error(error);
+			})
+
+	}
+</script>

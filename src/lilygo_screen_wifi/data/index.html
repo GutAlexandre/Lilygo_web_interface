@@ -1,224 +1,141 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-    <title>Transfert d'image vers ESP32</title>
-    <style>
-        #output {
-            max-width: 480px;
-            max-height: 480px;
-        }
-        #loader-container {
-            width: 100%;
-            height: 30px;
-            background-color: #f0f0f0;
-            position: relative;
-        }
-
-        #loader {
-            width: 0;
-            height: 100%;
-            background-color: #4caf50;
-            transition: width 0.3s ease-in-out;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connected-Screen Hub</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
 </head>
+
 <body>
-    <h1>Transfert d'image vers ESP32 (480x480 pixels)</h1>
-	<a href="https://www.imgonline.com.ua/eng/resize-image.php" target="_blank" rel="noopener noreferrer">
-        <button>Convertir avant l'envoie </button>
-    </a>
-    <!-- Formulaire d'envoi d'image -->
-    <form id="imageForm" onsubmit="return false;">
-        <input type="file" id="imageInput" accept="image/*">
-        <input type="submit" value="Envoyer">
-    </form>
-    
-    <div id="output"></div>
-    <div id="imageData"></div>
-    <div id="result"></div>
-    <div id="size"></div>
-	<div id="loader-container">
-        <div id="loader"></div>
+    <div id="container">
+        <nav class="navbar navbar-expand-lg bg-body-tertiary">
+            <div class="container-fluid" style="max-width: 80%;">
+                <a class="navbar-brand" href="/">Connected-Screen</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false"
+                    aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <form class="d-flex">
+                    <ul class="navbar-nav">
+                        <li class="nav-item dropdown ">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                                More
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a target="_blank" rel="noopener" class="nav-link"
+                                        href="/profile">
+                                        <span class="fa-regular fa-user"></span>
+                                        <span class="menu-text">Profile</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a target="_blank" rel="noopener" class="nav-link" href="setwifi">
+                                        <span class="fa-solid fa-wifi"></span>
+                                        <span class="menu-text">Settings</span>
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a target="_blank" rel="noopener" class="nav-link"
+                                        href="https://github.com/GutAlexandre">
+                                        <span class="fa-brands fa-github icon"></span>
+                                        <span class="menu-text">Github</span>
+                                    </a>
+                                </li>
+
+
+                            </ul>
+                        </li>
+                    </ul>
+
+                </form>
+            </div>
+        </nav>
     </div>
-    <!-- Script JavaScript -->
-    <script>
-        var currentRotation = 0; // Angle de rotation actuel
-        var resizedDataUrl = null; // URL de l'image redimensionnée
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Hub</h1>
 
-        const input = document.getElementById("imageInput");
-        const form = document.getElementById("imageForm");
-		const sizeDiv = document.getElementById("size");
-		const resultDiv = document.getElementById("result");
-		const loader = document.getElementById("loader");
-		const IMAGE_WIDTH = 480;
-		const IMAGE_HEIGHT = 480;
-		const CHUNK_SIZE = 4096;
-		const maxsize = 30000; // 30 KB
-		const targetSizeInBytes = maxsize * 1024; // 30 KB
-		
-        input.addEventListener("change", function () {
-            resizeAndAddBorders();
-        });
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fa-solid fa-crop-simple fa-beat" style="color: #af302c;"></i>
+                            Convertir
+                            une image au bon format</h5>
+                        <p class="card-text">This card has supporting text below as a natural lead-in to additional
+                            content.</p>
+                        </br>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" type="button"
+                                style="background-color: #af302c;border-color: #af302c;"
+                                onclick="window.open('https://www.imgonline.com.ua/eng/resize-image.php', '_blank');">Button</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fa-solid fa-arrow-up-from-bracket fa-bounce"
+                                style="color: #212e77;"></i></i> Envoyer l'image a l'ecran</h5>
+                        <p class="card-text">This card has supporting text below as a natural lead-in to additional
+                            content.</p>
+                        </br>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" type="button"
+                                style="background-color: #212e77;border-color: #212e77;"
+                                onclick="window.location.href = '/sendimg';">Button</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fa-regular fa-images" style="color: #1f604c;"></i></i> Liste
+                            des
+                            images</h5>
+                        <p class="card-text">This card has supporting text below as a natural lead-in to additional
+                            content.</p>
+                        </br>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" type="button"
+                                style="background-color: #1f604c;border-color: #1f604c;"
+                                onclick="window.location.href = '/imglist';">Button</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fa-solid fa-clock-rotate-left fa-spin fa-spin-reverse"
+                                style="color: #000000;"></i>
+                            Reset</h5>
+                        <p class="card-text">This card has supporting text below as a natural lead-in to additional
+                            content.</p>
+                        </br>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" type="button"
+                                style="background-color: #000000;border-color: #000000;"
+                                onclick="window.location.href = '/reset';">Button</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
 
-        function convert(dataURL) {
-            const file = input.files[0];
-
-            if (file) {
-                const reader = new FileReader();
-                const chunkSize = CHUNK_SIZE; 
-                reader.onload = function(event) {
-                    const image = new Image();
-                    image.src = event.target.result;
-
-                    image.onload = function() {
-                        const canvas = document.createElement("canvas");
-                        canvas.width = IMAGE_WIDTH;
-                        canvas.height = IMAGE_HEIGHT ;
-                        const context = canvas.getContext("2d");
-
-                        context.drawImage(image, 0, 0, IMAGE_WIDTH, IMAGE_HEIGHT );
-                        const imageData = context.getImageData(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT ).data;
-							
-                        const outputArray = [];
-                        let count = 0;
-                        for (let i = 0; i < imageData.length; i += 4) {
-                            const r = imageData[i];
-                            const g = imageData[i + 1];
-                            const b = imageData[i + 2];
-                            const rgb565 = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
-                            outputArray.push(`0x${rgb565.toString(16).toUpperCase()}, `);
-							
-
-                            count += 1;
-                        }
-						var res = outputArray.join("").replace(/\s/g, "");
-                        resultDiv.innerHTML = `<h2>Image convertie en tableau C :</h2><pre id="completeData">${res}</pre>`;
-                        sizeDiv.innerHTML = `<h2>Taille du tableau C :</h2><pre id="sizedata">${outputArray.length}</pre>`;
-						document.getElementById("imageData").value = res;
-                    };
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-		
-		
-        function resizeAndAddBorders() {
-            var input = document.getElementById('imageInput');
-            var output = document.getElementById('output');
-
-            if (input.files && input.files[0]) {
-				var file = input.files[0];
-        
-				// Vérifiez la taille du fichier en kilo-octets (1 Ko = 1024 octets)
-				var fileSizeInBytes = file.size;
-				var fileSizeInKB = fileSizeInBytes / 1024;
-
-				if (fileSizeInKB > maxsize) {
-					output.innerHTML = 'La taille du fichier est supérieure à 30 Ko. Veuillez sélectionner une image plus petite.';
-					return;
-				}
-		
-                var reader = new FileReader();
-
-                reader.onload = function(e) {
-                    var img = new Image();
-                    img.src = e.target.result;
-
-                    img.onload = function() {
-                        var canvas = document.createElement('canvas');
-                        var ctx = canvas.getContext('2d');
-                        var targetWidth = IMAGE_WIDTH;
-                        var targetHeight = IMAGE_HEIGHT ;
-
-                        var x = 0;
-                        var y = 0;
-                        var canvasWidth = targetWidth;
-                        var canvasHeight = targetHeight;
-
-                        if (img.width > targetWidth || img.height > targetHeight) {
-                            var ratio = Math.min(targetWidth / img.width, targetHeight / img.height);
-                            canvasWidth = img.width * ratio;
-                            canvasHeight = img.height * ratio;
-                            x = (targetWidth - canvasWidth) / 2;
-                            y = (targetHeight - canvasHeight) / 2;
-                        }
-
-                        canvas.width = targetWidth;
-                        canvas.height = targetHeight;
-
-                        ctx.fillStyle = 'black';
-                        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                        ctx.drawImage(img, x, y, canvasWidth, canvasHeight);
-
-                        resizedDataUrl = canvas.toDataURL('image/jpeg', 1.0);
-
-                        convert(resizedDataUrl);
-
-                        output.innerHTML = '<img id="image_resize" src="' + resizedDataUrl + '" alt="Image Redimensionnée">';
-                    };
-                };
-
-                reader.readAsDataURL(input.files[0]);
-            } else {
-                output.innerHTML = 'Sélectionnez une image valide.';
-            }
-        }
-		
-		form.addEventListener("submit", function (event) {
-			event.preventDefault(); // Empêche l'envoi du formulaire
-			
-			const sizeData = document.getElementById("sizedata").textContent;
-			const completeData = document.getElementById("completeData").textContent;
-			const chunkSize = CHUNK_SIZE; // Taille du paquet (en octets)
-			const chunks = chunkString(completeData, chunkSize); // Divisez les données en paquets
-			function chunkString(str, size) {
-				const chunks = [];
-				for (let i = 0; i < str.length; i += size) {
-					chunks.push(str.slice(i, i + size));
-				}
-				return chunks;
-			}
-
-			chunks.unshift("Begin : " + sizeData + " : "+ CHUNK_SIZE);
-			chunks.push("End");
-
-			function sendChunksWithDelay(chunks, index) {
-				if (index < chunks.length) {
-					const chunk = chunks[index];
-					//console.log(`Envoi du paquet ${index + 1}: ${chunk}`);
-					
-					const formData = new FormData();
-					formData.append("imageChunk", chunk);
-
-					fetch("/sendImageChunk", {
-						method: "POST",
-						body: formData,
-					})
-					.then((response) => {
-						if (response.ok) {
-							console.log(`Paquet ${index + 1}/${chunks.length} envoyé avec succès à l'ESP32.`);
-							pourcent = ((index + 1) * 100 ) / chunks.length;
-							loader.style.width = pourcent + '%';
-							
-						} else {
-							throw new Error("Erreur lors de l'envoi du paquet.");
-							index -=  1
-						}
-					})
-					.catch((error) => {
-						console.error(error);
-					})
-					.finally(() => {
-						setTimeout(() => {
-							sendChunksWithDelay(chunks, index + 1);
-						}, 10);
-					});
-				}
-			}
-			sendChunksWithDelay(chunks, 0);
-		});
-		
-    </script>
+    <script src="https://kit.fontawesome.com/1cfcd63e7f.js" crossorigin="anonymous"></script>
 </body>
+
 </html>
